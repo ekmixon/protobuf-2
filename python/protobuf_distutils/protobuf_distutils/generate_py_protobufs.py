@@ -111,11 +111,23 @@ class generate_py_protobufs(Command):
                 if self.proto_root_path.startswith(root_candidate):
                     self.proto_root_path = root_candidate
             if self.proto_root_path != self.source_dir:
-                self.announce('using computed proto_root_path: ' + self.proto_root_path, level=2)
+                self.announce(
+                    f'using computed proto_root_path: {self.proto_root_path}',
+                    level=2,
+                )
+
 
         if not self.source_dir.startswith(self.proto_root_path):
-            raise DistutilsOptionError('source_dir ' + self.source_dir +
-                                       ' is not under proto_root_path ' + self.proto_root_path)
+            raise DistutilsOptionError(
+                (
+                    (
+                        f'source_dir {self.source_dir}'
+                        + ' is not under proto_root_path '
+                    )
+                    + self.proto_root_path
+                )
+            )
+
 
         if self.proto_files is None:
             files = glob.glob(os.path.join(self.source_dir, '*.proto'))
@@ -123,7 +135,10 @@ class generate_py_protobufs(Command):
                 files.extend(glob.glob(os.path.join(self.source_dir, '**', '*.proto'), recursive=True))
             self.proto_files = [f.partition(self.proto_root_path + os.path.sep)[-1] for f in files]
             if not self.proto_files:
-                raise DistutilsOptionError('no .proto files were found under ' + self.source_dir)
+                raise DistutilsOptionError(
+                    f'no .proto files were found under {self.source_dir}'
+                )
+
 
         self.ensure_string_list('proto_files')
 
@@ -135,13 +150,17 @@ class generate_py_protobufs(Command):
     def run(self):
         # All proto file paths were adjusted in finalize_options to be relative
         # to self.proto_root_path.
-        proto_paths = ['--proto_path=' + self.proto_root_path]
-        proto_paths.extend(['--proto_path=' + x for x in self.extra_proto_paths])
+        proto_paths = [
+            f'--proto_path={self.proto_root_path}',
+            *[f'--proto_path={x}' for x in self.extra_proto_paths],
+        ]
 
         # Run protoc. It was already resolved, so don't try to resolve
         # through PATH.
         spawn.spawn(
-            [self.protoc,
-             '--python_out=' + self.output_dir,
-            ] + proto_paths + self.proto_files,
-            search_path=0)
+            (
+                ([self.protoc, f'--python_out={self.output_dir}'] + proto_paths)
+                + self.proto_files
+            ),
+            search_path=0,
+        )

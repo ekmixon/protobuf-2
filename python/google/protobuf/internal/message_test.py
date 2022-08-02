@@ -529,9 +529,7 @@ class MessageTest(unittest.TestCase):
   def testRepeatedScalarIterable(self, message_module):
     msg = message_module.TestAllTypes()
     msg.repeated_int32.extend([1, 2, 3])
-    add = 0
-    for item in msg.repeated_int32:
-      add += item
+    add = sum(msg.repeated_int32)
     self.assertEqual(add, 6)
 
   def testRepeatedNestedFieldIteration(self, message_module):
@@ -973,7 +971,7 @@ class MessageTest(unittest.TestCase):
     in the value being converted to a Unicode string.
     """
     m = message_module.TestAllTypes()
-    m.optional_string = str('')
+    m.optional_string = ''
     self.assertIsInstance(m.optional_string, str)
 
   def testLongValuedSlice(self, message_module):
@@ -985,21 +983,21 @@ class MessageTest(unittest.TestCase):
 
     # Repeated scalar
     m.repeated_int32.append(1)
-    sl = m.repeated_int32[int(0):int(len(m.repeated_int32))]
+    sl = m.repeated_int32[:]
     self.assertEqual(len(m.repeated_int32), len(sl))
 
     # Repeated composite
     m.repeated_nested_message.add().bb = 3
-    sl = m.repeated_nested_message[int(0):int(len(m.repeated_nested_message))]
+    sl = m.repeated_nested_message[:]
     self.assertEqual(len(m.repeated_nested_message), len(sl))
 
   def testExtendShouldNotSwallowExceptions(self, message_module):
     """This didn't use to work in the v2 C++ implementation."""
     m = message_module.TestAllTypes()
     with self.assertRaises(NameError) as _:
-      m.repeated_int32.extend(a for i in range(10))  # pylint: disable=undefined-variable
+      m.repeated_int32.extend(a for _ in range(10))
     with self.assertRaises(NameError) as _:
-      m.repeated_nested_enum.extend(a for i in range(10))  # pylint: disable=undefined-variable
+      m.repeated_nested_enum.extend(a for _ in range(10))
 
   FALSY_VALUES = [None, False, 0, 0.0, b'', u'', bytearray(), [], {}, set()]
 
@@ -2088,9 +2086,9 @@ class Proto3Test(unittest.TestCase):
 
   def testIntegerMapWithLongs(self):
     msg = map_unittest_pb2.TestMap()
-    msg.map_int32_int32[int(-123)] = int(-456)
+    msg.map_int32_int32[-123] = -456
     msg.map_int64_int64[int(-2**33)] = int(-2**34)
-    msg.map_uint32_uint32[int(123)] = int(456)
+    msg.map_uint32_uint32[123] = 456
     msg.map_uint64_uint64[int(2**33)] = int(2**34)
 
     serialized = msg.SerializeToString()
@@ -2162,12 +2160,9 @@ class Proto3Test(unittest.TestCase):
     msg.map_int32_foreign_message[5].c = 5
 
     with self.assertRaises(RuntimeError):
-      for key in string_string_iter:
-        pass
-
+      pass
     with self.assertRaises(RuntimeError):
-      for key in int32_foreign_iter:
-        pass
+      pass
 
   def testModifyMapEntryWhileIterating(self):
     msg = map_unittest_pb2.TestMap()
@@ -2374,14 +2369,11 @@ class Proto3Test(unittest.TestCase):
 
     msg.ClearField('map_int32_int32')
     with self.assertRaises(RuntimeError):
-      for _ in it:
-        pass
-
+      pass
     it = iter(msg.map_int32_foreign_message)
     msg.ClearField('map_int32_foreign_message')
     with self.assertRaises(RuntimeError):
-      for _ in it:
-        pass
+      pass
 
   def testMapDelete(self):
     msg = map_unittest_pb2.TestMap()
@@ -2466,8 +2458,10 @@ class ValidTypeNamesTest(unittest.TestCase):
   def assertImportFromName(self, msg, base_name):
     # Parse <type 'module.class_name'> to extra 'some.name' as a string.
     tp_name = str(type(msg)).split("'")[1]
-    valid_names = ('Repeated%sContainer' % base_name,
-                   'Repeated%sFieldContainer' % base_name)
+    valid_names = (
+        f'Repeated{base_name}Container',
+        f'Repeated{base_name}FieldContainer',
+    )
     self.assertTrue(
         any(tp_name.endswith(v) for v in valid_names),
         '%r does end with any of %r' % (tp_name, valid_names))

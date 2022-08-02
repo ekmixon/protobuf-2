@@ -34,16 +34,12 @@ Example:
 """)
   exit(1)
 
-RC_VERSION = -1
-if len(sys.argv) > 2:
-  RC_VERSION = int(sys.argv[2])
+RC_VERSION = int(sys.argv[2]) if len(sys.argv) > 2 else -1
 
 
 def Find(elem, tagname):
-  for child in elem.childNodes:
-    if child.nodeName == tagname:
-      return child
-  return None
+  return next(
+      (child for child in elem.childNodes if child.nodeName == tagname), None)
 
 
 def FindAndClone(elem, tagname):
@@ -58,7 +54,7 @@ def GetFullVersion(rc_suffix = '-rc-'):
   if RC_VERSION < 0:
     return NEW_VERSION
   else:
-    return '%s%s%s' % (NEW_VERSION, rc_suffix, RC_VERSION)
+    return f'{NEW_VERSION}{rc_suffix}{RC_VERSION}'
 
 
 def GetSharedObjectVersion():
@@ -82,24 +78,20 @@ def RewriteXml(filename, rewriter, add_xml_prefix=True):
   # will remove the default XML version and replace it with our custom one when
   # whever necessary.
   content = document.toxml().replace('<?xml version="1.0" ?>', '')
-  file_handle = open(filename, 'wb')
-  if add_xml_prefix:
-    file_handle.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
-  file_handle.write(content.encode('utf-8'))
-  file_handle.write(b'\n')
-  file_handle.close()
+  with open(filename, 'wb') as file_handle:
+    if add_xml_prefix:
+      file_handle.write(b'<?xml version="1.0" encoding="UTF-8"?>\n')
+    file_handle.write(content.encode('utf-8'))
+    file_handle.write(b'\n')
 
 
 def RewriteTextFile(filename, line_rewriter):
   lines = open(filename, 'r').readlines()
-  updated_lines = []
-  for line in lines:
-    updated_lines.append(line_rewriter(line))
+  updated_lines = [line_rewriter(line) for line in lines]
   if lines == updated_lines:
-    print('%s was not updated. Please double check.' % filename)
-  f = open(filename, 'w')
-  f.write(''.join(updated_lines))
-  f.close()
+    print(f'{filename} was not updated. Please double check.')
+  with open(filename, 'w') as f:
+    f.write(''.join(updated_lines))
 
 
 def UpdateCMake():
@@ -109,20 +101,25 @@ def UpdateCMake():
     'cmake/libprotoc.cmake'
   )
   for cmake_file in cmake_files:
-    RewriteTextFile(cmake_file,
-      lambda line : re.sub(
-        r'SOVERSION ([0-9]+)$',
-        'SOVERSION %s' % GetSharedObjectVersion()[0],
-        line))
+    RewriteTextFile(
+        cmake_file,
+        lambda line: re.sub(
+            r'SOVERSION ([0-9]+)$',
+            f'SOVERSION {GetSharedObjectVersion()[0]}',
+            line,
+        ),
+    )
 
 
 def UpdateConfigure():
-  RewriteTextFile('configure.ac',
-    lambda line : re.sub(
-      r'^AC_INIT\(\[Protocol Buffers\],\[.*\],\[protobuf@googlegroups.com\],\[protobuf\]\)$',
-      ('AC_INIT([Protocol Buffers],[%s],[protobuf@googlegroups.com],[protobuf])'
-        % GetFullVersion()),
-      line))
+  RewriteTextFile(
+      'configure.ac',
+      lambda line: re.sub(
+          r'^AC_INIT\(\[Protocol Buffers\],\[.*\],\[protobuf@googlegroups.com\],\[protobuf\]\)$',
+          f'AC_INIT([Protocol Buffers],[{GetFullVersion()}],[protobuf@googlegroups.com],[protobuf])',
+          line,
+      ),
+  )
 
 
 def UpdateCpp():
@@ -130,16 +127,18 @@ def UpdateCpp():
     NEW_VERSION_INFO[0], NEW_VERSION_INFO[1], NEW_VERSION_INFO[2])
   version_suffix = ''
   if RC_VERSION != -1:
-    version_suffix = '-rc%s' % RC_VERSION
+    version_suffix = f'-rc{RC_VERSION}'
   def RewriteCommon(line):
     line = re.sub(
-      r'^#define GOOGLE_PROTOBUF_VERSION .*$',
-      '#define GOOGLE_PROTOBUF_VERSION %s' % cpp_version,
-      line)
+        r'^#define GOOGLE_PROTOBUF_VERSION .*$',
+        f'#define GOOGLE_PROTOBUF_VERSION {cpp_version}',
+        line,
+    )
     line = re.sub(
-      r'^#define PROTOBUF_VERSION .*$',
-      '#define PROTOBUF_VERSION %s' % cpp_version,
-      line)
+        r'^#define PROTOBUF_VERSION .*$',
+        f'#define PROTOBUF_VERSION {cpp_version}',
+        line,
+    )
     line = re.sub(
         r'^#define GOOGLE_PROTOBUF_VERSION_SUFFIX .*$',
         '#define GOOGLE_PROTOBUF_VERSION_SUFFIX "%s"' % version_suffix,
@@ -150,58 +149,68 @@ def UpdateCpp():
         line)
     if NEW_VERSION_INFO[2] == 0:
       line = re.sub(
-        r'^#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC .*$',
-        '#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC %s' % cpp_version,
-        line)
+          r'^#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC .*$',
+          f'#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC {cpp_version}',
+          line,
+      )
       line = re.sub(
-        r'^#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION .*$',
-        '#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION %s' % cpp_version,
-        line)
+          r'^#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION .*$',
+          f'#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION {cpp_version}',
+          line,
+      )
       line = re.sub(
-        r'^static const int kMinHeaderVersionForLibrary = .*$',
-        'static const int kMinHeaderVersionForLibrary = %s;' % cpp_version,
-        line)
+          r'^static const int kMinHeaderVersionForLibrary = .*$',
+          f'static const int kMinHeaderVersionForLibrary = {cpp_version};',
+          line,
+      )
       line = re.sub(
-        r'^static const int kMinHeaderVersionForProtoc = .*$',
-        'static const int kMinHeaderVersionForProtoc = %s;' % cpp_version,
-        line)
+          r'^static const int kMinHeaderVersionForProtoc = .*$',
+          f'static const int kMinHeaderVersionForProtoc = {cpp_version};',
+          line,
+      )
     return line
 
   def RewritePortDef(line):
     line = re.sub(
-      r'^#define PROTOBUF_VERSION .*$',
-      '#define PROTOBUF_VERSION %s' % cpp_version,
-      line)
+        r'^#define PROTOBUF_VERSION .*$',
+        f'#define PROTOBUF_VERSION {cpp_version}',
+        line,
+    )
     line = re.sub(
         r'^#define PROTOBUF_VERSION_SUFFIX .*$',
         '#define PROTOBUF_VERSION_SUFFIX "%s"' % version_suffix,
         line)
     if NEW_VERSION_INFO[2] == 0:
       line = re.sub(
-        r'^#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC .*$',
-        '#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC %s' % cpp_version,
-        line)
+          r'^#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC .*$',
+          f'#define PROTOBUF_MIN_HEADER_VERSION_FOR_PROTOC {cpp_version}',
+          line,
+      )
       line = re.sub(
-        r'^#define PROTOBUF_MIN_PROTOC_VERSION .*$',
-        '#define PROTOBUF_MIN_PROTOC_VERSION %s' % cpp_version,
-        line)
+          r'^#define PROTOBUF_MIN_PROTOC_VERSION .*$',
+          f'#define PROTOBUF_MIN_PROTOC_VERSION {cpp_version}',
+          line,
+      )
       line = re.sub(
-        r'^#define GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION .*$',
-        '#define GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION %s' % cpp_version,
-        line)
+          r'^#define GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION .*$',
+          f'#define GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION {cpp_version}',
+          line,
+      )
     return line
 
   def RewritePbH(line):
     line = re.sub(
         r'^#if PROTOBUF_VERSION < .*$',
-        '#if PROTOBUF_VERSION < %s' % cpp_version,
-        line)
+        f'#if PROTOBUF_VERSION < {cpp_version}',
+        line,
+    )
     line = re.sub(
         r'^#if .* < PROTOBUF_MIN_PROTOC_VERSION$',
-        '#if %s < PROTOBUF_MIN_PROTOC_VERSION' % cpp_version,
-        line)
+        f'#if {cpp_version} < PROTOBUF_MIN_PROTOC_VERSION',
+        line,
+    )
     return line
-    
+
   RewriteTextFile('src/google/protobuf/stubs/common.h', RewriteCommon)
   RewriteTextFile('src/google/protobuf/port_def.inc', RewritePortDef)
   RewriteTextFile('src/google/protobuf/any.pb.h', RewritePbH)
@@ -268,12 +277,15 @@ def UpdateJava():
   RewriteXml('protoc-artifacts/pom.xml',
     lambda document : ReplaceText(
       Find(document.documentElement, 'version'), GetFullVersion()))
-  
-  RewriteTextFile('java/README.md',
-    lambda line : re.sub(
-      r'<version>.*</version>',
-      '<version>%s</version>' % GetFullVersion(),
-      line))
+
+  RewriteTextFile(
+      'java/README.md',
+      lambda line: re.sub(
+          r'<version>.*</version>',
+          f'<version>{GetFullVersion()}</version>',
+          line,
+      ),
+  )
 
   RewriteTextFile('java/README.md',
     lambda line : re.sub(
@@ -281,11 +293,14 @@ def UpdateJava():
       'implementation \'com.google.protobuf:protobuf-java:%s\'' % GetFullVersion(),
       line))
 
-  RewriteTextFile('java/lite.md',
-    lambda line : re.sub(
-      r'<version>.*</version>',
-      '<version>%s</version>' % GetFullVersion(),
-      line))
+  RewriteTextFile(
+      'java/lite.md',
+      lambda line: re.sub(
+          r'<version>.*</version>',
+          f'<version>{GetFullVersion()}</version>',
+          line,
+      ),
+  )
 
 
 def UpdateJavaScript():
@@ -297,11 +312,14 @@ def UpdateJavaScript():
 
 
 def UpdateMakefile():
-  RewriteTextFile('src/Makefile.am',
-    lambda line : re.sub(
-      r'^PROTOBUF_VERSION = .*$',
-      'PROTOBUF_VERSION = %s' % ":".join(map(str,GetSharedObjectVersion())),
-      line))
+  RewriteTextFile(
+      'src/Makefile.am',
+      lambda line: re.sub(
+          r'^PROTOBUF_VERSION = .*$',
+          f'PROTOBUF_VERSION = {":".join(map(str,GetSharedObjectVersion()))}',
+          line,
+      ),
+  )
 
 
 def UpdateObjectiveC():
@@ -343,8 +361,7 @@ def UpdatePhp():
     changelog = Find(root, 'changelog')
     for old_version in changelog.getElementsByTagName('version'):
       if Find(old_version, 'release').firstChild.nodeValue == NEW_VERSION:
-        print ('[WARNING] Version %s already exists in the change log.'
-          % NEW_VERSION)
+        print(f'[WARNING] Version {NEW_VERSION} already exists in the change log.')
         return
     if RC_VERSION != 0:
       changelog.appendChild(document.createTextNode(' '))
@@ -364,6 +381,7 @@ def UpdatePhp():
         ])
       changelog.appendChild(release)
       changelog.appendChild(document.createTextNode('\n '))
+
   RewriteXml('php/ext/google/protobuf/package.xml', Callback)
   RewriteTextFile('php/ext/google/protobuf/protobuf.h',
     lambda line : re.sub(

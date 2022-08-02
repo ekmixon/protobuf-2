@@ -14,7 +14,7 @@ __file_size_map = {}
 
 def __get_data_size(filename):
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + "/../" + filename
+    filename = f"{os.path.dirname(os.path.abspath(__file__))}/../{filename}"
   if filename in __file_size_map:
     return __file_size_map[filename]
   benchmark_dataset = benchmarks_pb2.BenchmarkDataset()
@@ -60,14 +60,14 @@ def __parse_cpp_result(filename):
   if filename == "":
     return
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/' + filename
+    filename = f'{os.path.dirname(os.path.abspath(__file__))}/{filename}'
   with open(filename, encoding="utf-8") as f:
     results = json.loads(f.read())
     for benchmark in results["benchmarks"]:
       data_filename = "".join(
           re.split("(_parse_|_serialize)", benchmark["name"])[0])
       behavior = benchmark["name"][len(data_filename) + 1:]
-      if data_filename[:2] == "BM":
+      if data_filename.startswith("BM"):
         data_filename = data_filename[3:]
       __results.append({
         "language": "cpp",
@@ -95,7 +95,7 @@ def __parse_synthetic_result(filename):
   if filename == "":
     return
   if filename[0] != "/":
-    filename = os.path.dirname(os.path.abspath(__file__)) + "/" + filename
+    filename = f"{os.path.dirname(os.path.abspath(__file__))}/{filename}"
   with open(filename, encoding="utf-8") as f:
     results = json.loads(f.read())
     for benchmark in results["benchmarks"]:
@@ -125,7 +125,7 @@ def __parse_python_result(filename):
   if filename == "":
     return
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/' + filename
+    filename = f'{os.path.dirname(os.path.abspath(__file__))}/{filename}'
   with open(filename, encoding="utf-8") as f:
     results_list = json.loads(f.read())
     for results in results_list:
@@ -175,7 +175,7 @@ def __parse_java_result(filename):
   if filename == "":
     return
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/' + filename
+    filename = f'{os.path.dirname(os.path.abspath(__file__))}/{filename}'
   with open(filename, encoding="utf-8") as f:
     results = json.loads(f.read())
     for result in results:
@@ -211,7 +211,7 @@ def __parse_go_result(filename):
   if filename == "":
     return
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/' + filename
+    filename = f'{os.path.dirname(os.path.abspath(__file__))}/{filename}'
   with open(filename, encoding="utf-8") as f:
     for line in f:
       result_list = re.split(r"[\ \t]+", line)
@@ -251,7 +251,7 @@ def __parse_custom_result(filename, language):
   if filename == "":
     return
   if filename[0] != '/':
-    filename = os.path.dirname(os.path.abspath(__file__)) + '/' + filename
+    filename = f'{os.path.dirname(os.path.abspath(__file__))}/{filename}'
   with open(filename, encoding="utf-8") as f:
     results = json.loads(f.read())
     for result in results:

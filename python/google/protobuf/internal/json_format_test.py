@@ -288,8 +288,8 @@ class JsonFormatTest(JsonFormatBase):
 
   def testJsonEscapeString(self):
     message = json_format_proto3_pb2.TestMessage()
-    message.string_value = '&\n<\"\r>\b\t\f\\\001/'
-    message.string_value += (b'\xe2\x80\xa8\xe2\x80\xa9').decode('utf-8')
+    message.string_value = '&\n<\"\r>\b\t\f\\\001/' + (
+        b'\xe2\x80\xa8\xe2\x80\xa9').decode('utf-8')
     self.assertEqual(
         json_format.MessageToJson(message),
         '{\n  "stringValue": '
@@ -680,10 +680,11 @@ class JsonFormatTest(JsonFormatBase):
     message.Clear()
     message.value.Pack(test_message)
     self.assertEqual(
-        json_format.MessageToJson(message, False)[0:68],
+        json_format.MessageToJson(message, False)[:68],
         '{\n'
         '  "value": {\n'
-        '    "@type": "type.googleapis.com/proto3.TestMessage"')
+        '    "@type": "type.googleapis.com/proto3.TestMessage"',
+    )
 
   def testAnyMessageDescriptorPoolMissingType(self):
     packed_message = unittest_pb2.OneString()
@@ -871,9 +872,9 @@ class JsonFormatTest(JsonFormatBase):
     # lose precision
     value_list = [0x00, 0xD8, 0x6E, 0x00]
     msg2 = json_format_proto3_pb2.TestMessage()
-    for a in range(0, 256):
+    for a in range(256):
       value_list[3] = a
-      for b in range(0, 256):
+      for b in range(256):
         value_list[0] = b
         byte_array = bytearray(value_list)
         message.float_value = struct.unpack('<f', byte_array)[0]

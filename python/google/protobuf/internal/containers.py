@@ -170,8 +170,9 @@ class RepeatedScalarFieldContainer(BaseContainer[_T], MutableSequence[_T]):
         return
       raise
 
-    new_values = [self._type_checker.CheckValue(elem) for elem in elem_seq_iter]
-    if new_values:
+    if new_values := [
+        self._type_checker.CheckValue(elem) for elem in elem_seq_iter
+    ]:
       self._values.extend(new_values)
     self._message_listener.Modified()
 
@@ -210,10 +211,10 @@ class RepeatedScalarFieldContainer(BaseContainer[_T], MutableSequence[_T]):
       if key.step is not None:
         raise ValueError('Extended slices not supported')
       self._values[key] = map(self._type_checker.CheckValue, value)
-      self._message_listener.Modified()
     else:
       self._values[key] = self._type_checker.CheckValue(value)
-      self._message_listener.Modified()
+
+    self._message_listener.Modified()
 
   def __delitem__(self, key: Union[int, slice]) -> None:
     """Deletes the item at the specified position."""
@@ -421,10 +422,7 @@ class ScalarMap(MutableMapping[_K, _V]):
   # will make the default implementation (from our base class) always insert
   # the key.
   def get(self, key, default=None):
-    if key in self:
-      return self[key]
-    else:
-      return default
+    return self[key] if key in self else default
 
   def __setitem__(self, key: _K, value: _V) -> _T:
     checked_key = self._key_checker.CheckValue(key)
@@ -533,10 +531,7 @@ class MessageMap(MutableMapping[_K, _V]):
   # will make the default implementation (from our base class) always insert
   # the key.
   def get(self, key, default=None):
-    if key in self:
-      return self[key]
-    else:
-      return default
+    return self[key] if key in self else default
 
   def __contains__(self, item: _K) -> bool:
     item = self._key_checker.CheckValue(item)

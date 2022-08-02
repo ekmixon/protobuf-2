@@ -149,7 +149,7 @@ class MacroCollection(object):
     Raises:
       PDDMError if there are any issues.
     """
-    self._macros = dict()
+    self._macros = {}
     if a_file:
       self.ParseInput(a_file)
 
@@ -277,10 +277,8 @@ class MacroCollection(object):
     return self._Expand(match, [], macro_ref_str)
 
   def _FormatStack(self, macro_ref_stack):
-    result = ''
-    for _, macro_ref in reversed(macro_ref_stack):
-      result += '\n...while expanding "%s".' % macro_ref
-    return result
+    return ''.join('\n...while expanding "%s".' % macro_ref
+                   for _, macro_ref in reversed(macro_ref_stack))
 
   def _Expand(self, macro_ref_match, macro_stack, macro_ref_str=None):
     if macro_ref_str is None:
@@ -327,17 +325,11 @@ class MacroCollection(object):
         if opt == 'S':  # Spaces for the length
           return ' ' * len(val)
         elif opt == 'l':  # Lowercase first character
-          if val:
-            return val[0].lower() + val[1:]
-          else:
-            return val
+          return val[0].lower() + val[1:] if val else val
         elif opt == 'L':  # All Lowercase
           return val.lower()
         elif opt == 'u':  # Uppercase first character
-          if val:
-            return val[0].upper() + val[1:]
-          else:
-            return val
+          return val[0].upper() + val[1:] if val else val
         elif opt == 'U':  # All Uppercase
           return val.upper()
         else:
@@ -346,6 +338,7 @@ class MacroCollection(object):
                              macro_ref_to_report,
                              self._FormatStack(macro_stack)))
       return val
+
     # Let the regex do the work!
     macro_arg_ref_re = _MacroArgRefRe(macro.args)
     return macro_arg_ref_re.sub(_lookupArg, macro.body)
@@ -427,9 +420,7 @@ class SourceFile(object):
 
     @property
     def first_line(self):
-      if not self._lines:
-        return ''
-      return self._lines[0]
+      return self._lines[0] if self._lines else ''
 
     @property
     def text(self):
@@ -605,16 +596,10 @@ class SourceFile(object):
   def ProcessContent(self, strip_expansion=False):
     """Processes the file contents."""
     self._ParseFile()
-    if strip_expansion:
-      # Without a collection the expansions become blank, removing them.
-      collection = None
-    else:
-      collection = MacroCollection()
+    collection = None if strip_expansion else MacroCollection()
     for section in self._sections:
       section.BindMacroCollection(collection)
-    result = ''
-    for section in self._sections:
-      result += section.text
+    result = ''.join(section.text for section in self._sections)
     self._processed_content = result
 
   @property
@@ -657,9 +642,7 @@ def main(args):
       # resolve based on the file being read.
       a_dir = os.path.dirname(a_path)
       import_path = os.path.join(a_dir, name)
-      if not os.path.exists(import_path):
-        return None
-      return open(import_path, 'r')
+      return open(import_path, 'r') if os.path.exists(import_path) else None
 
     with open(a_path, 'r') as f:
       src_file = SourceFile(f, _ImportResolver)

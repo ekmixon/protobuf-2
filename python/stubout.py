@@ -68,11 +68,8 @@ class StubOutForTesting:
       orig_attr = getattr(obj, attr_name)
 
     else:
-      if not inspect.isclass(obj):
-        mro = list(inspect.getmro(obj.__class__))
-      else:
-        mro = list(inspect.getmro(obj))
-
+      mro = (list(inspect.getmro(obj)) if inspect.isclass(obj) else list(
+          inspect.getmro(obj.__class__)))
       mro.reverse()
 
       orig_attr = None

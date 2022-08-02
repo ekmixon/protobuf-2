@@ -39,8 +39,8 @@ def _VerifyExtensionHandle(message, extension_handle):
   """Verify that the given extension handle is valid."""
 
   if not isinstance(extension_handle, FieldDescriptor):
-    raise KeyError('HasExtension() expects an extension handle, got: %s' %
-                   extension_handle)
+    raise KeyError(
+        f'HasExtension() expects an extension handle, got: {extension_handle}')
 
   if not extension_handle.is_extension:
     raise KeyError('"%s" is not an extension.' % extension_handle.full_name)

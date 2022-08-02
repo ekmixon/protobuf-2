@@ -340,7 +340,7 @@ class DescriptorPoolTestBase(object):
     another_field = factory_test2.extensions_by_name['another_field']
 
     extensions = self.pool.FindAllExtensions(factory1_message)
-    expected_extension_numbers = set([one_more_field, another_field])
+    expected_extension_numbers = {one_more_field, another_field}
     self.assertEqual(expected_extension_numbers, set(extensions))
     # Verify that mutating the returned list does not affect the pool.
     extensions.append('unexpected_element')
@@ -394,12 +394,12 @@ class DescriptorPoolTestBase(object):
     self.testFindMessageTypeByName()
 
   def testAddSerializedFile(self):
-    if isinstance(self, SecondaryDescriptorFromDescriptorDB):
-      if api_implementation.Type() == 'cpp':
-        # Cpp extension cannot call Add on a DescriptorPool
-        # that uses a DescriptorDatabase.
-        # TODO(jieluo): Fix python and cpp extension diff.
-        return
+    if (isinstance(self, SecondaryDescriptorFromDescriptorDB)
+        and api_implementation.Type() == 'cpp'):
+      # Cpp extension cannot call Add on a DescriptorPool
+      # that uses a DescriptorDatabase.
+      # TODO(jieluo): Fix python and cpp extension diff.
+      return
     self.pool = descriptor_pool.DescriptorPool()
     file1 = self.pool.AddSerializedFile(
         self.factory_test1_fd.SerializeToString())
@@ -425,6 +425,7 @@ class DescriptorPoolTestBase(object):
                        .default_value)
       self.assertEqual(default_value,
                        descriptor_pool_test1_pb2.DescriptorPoolTest1.BETA)
+
     # First check what the generated descriptor contains.
     _CheckDefaultValue(descriptor_pool_test1_pb2.DESCRIPTOR)
     # Then check the generated pool. Normally this is the same descriptor.
@@ -433,12 +434,12 @@ class DescriptorPoolTestBase(object):
     self.assertIs(file_descriptor, descriptor_pool_test1_pb2.DESCRIPTOR)
     _CheckDefaultValue(file_descriptor)
 
-    if isinstance(self, SecondaryDescriptorFromDescriptorDB):
-      if api_implementation.Type() == 'cpp':
-        # Cpp extension cannot call Add on a DescriptorPool
-        # that uses a DescriptorDatabase.
-        # TODO(jieluo): Fix python and cpp extension diff.
-        return
+    if (isinstance(self, SecondaryDescriptorFromDescriptorDB)
+        and api_implementation.Type() == 'cpp'):
+      # Cpp extension cannot call Add on a DescriptorPool
+      # that uses a DescriptorDatabase.
+      # TODO(jieluo): Fix python and cpp extension diff.
+      return
     # Then check the dynamic pool and its internal DescriptorDatabase.
     descriptor_proto = descriptor_pb2.FileDescriptorProto.FromString(
         descriptor_pool_test1_pb2.DESCRIPTOR.serialized_pb)
@@ -487,23 +488,23 @@ class DescriptorPoolTestBase(object):
     _CheckDefaultValues(message_class())
 
   def testAddFileDescriptor(self):
-    if isinstance(self, SecondaryDescriptorFromDescriptorDB):
-      if api_implementation.Type() == 'cpp':
-        # Cpp extension cannot call Add on a DescriptorPool
-        # that uses a DescriptorDatabase.
-        # TODO(jieluo): Fix python and cpp extension diff.
-        return
+    if (isinstance(self, SecondaryDescriptorFromDescriptorDB)
+        and api_implementation.Type() == 'cpp'):
+      # Cpp extension cannot call Add on a DescriptorPool
+      # that uses a DescriptorDatabase.
+      # TODO(jieluo): Fix python and cpp extension diff.
+      return
     file_desc = descriptor_pb2.FileDescriptorProto(name='some/file.proto')
     self.pool.Add(file_desc)
     self.pool.AddSerializedFile(file_desc.SerializeToString())
 
   def testComplexNesting(self):
-    if isinstance(self, SecondaryDescriptorFromDescriptorDB):
-      if api_implementation.Type() == 'cpp':
-        # Cpp extension cannot call Add on a DescriptorPool
-        # that uses a DescriptorDatabase.
-        # TODO(jieluo): Fix python and cpp extension diff.
-        return
+    if (isinstance(self, SecondaryDescriptorFromDescriptorDB)
+        and api_implementation.Type() == 'cpp'):
+      # Cpp extension cannot call Add on a DescriptorPool
+      # that uses a DescriptorDatabase.
+      # TODO(jieluo): Fix python and cpp extension diff.
+      return
     more_messages_desc = descriptor_pb2.FileDescriptorProto.FromString(
         more_messages_pb2.DESCRIPTOR.serialized_pb)
     test1_desc = descriptor_pb2.FileDescriptorProto.FromString(
@@ -517,19 +518,17 @@ class DescriptorPoolTestBase(object):
     TEST2_FILE.CheckFile(self, self.pool)
 
   def testConflictRegister(self):
-    if isinstance(self, SecondaryDescriptorFromDescriptorDB):
-      if api_implementation.Type() == 'cpp':
-        # Cpp extension cannot call Add on a DescriptorPool
-        # that uses a DescriptorDatabase.
-        # TODO(jieluo): Fix python and cpp extension diff.
-        return
+    if (isinstance(self, SecondaryDescriptorFromDescriptorDB)
+        and api_implementation.Type() == 'cpp'):
+      # Cpp extension cannot call Add on a DescriptorPool
+      # that uses a DescriptorDatabase.
+      # TODO(jieluo): Fix python and cpp extension diff.
+      return
     unittest_fd = descriptor_pb2.FileDescriptorProto.FromString(
         unittest_pb2.DESCRIPTOR.serialized_pb)
     conflict_fd = copy.deepcopy(unittest_fd)
     conflict_fd.name = 'other_file'
-    if api_implementation.Type() == 'cpp':
-        pass
-    else:
+    if api_implementation.Type() != 'cpp':
       pool = copy.deepcopy(self.pool)
       file_descriptor = unittest_pb2.DESCRIPTOR
       pool._AddDescriptor(
@@ -882,18 +881,20 @@ class AddDescriptorTest(unittest.TestCase):
     self.assertEqual(
         'protobuf_unittest.TestAllTypes',
         pool.FindMessageTypeByName(
-            prefix + 'protobuf_unittest.TestAllTypes').full_name)
+            f'{prefix}protobuf_unittest.TestAllTypes').full_name,
+    )
 
     # AddDescriptor is not recursive.
     with self.assertRaises(KeyError):
       pool.FindMessageTypeByName(
-          prefix + 'protobuf_unittest.TestAllTypes.NestedMessage')
+          f'{prefix}protobuf_unittest.TestAllTypes.NestedMessage')
 
     pool._AddDescriptor(unittest_pb2.TestAllTypes.NestedMessage.DESCRIPTOR)
     self.assertEqual(
         'protobuf_unittest.TestAllTypes.NestedMessage',
         pool.FindMessageTypeByName(
-            prefix + 'protobuf_unittest.TestAllTypes.NestedMessage').full_name)
+            f'{prefix}protobuf_unittest.TestAllTypes.NestedMessage').full_name,
+    )
 
     # Files are implicitly also indexed when messages are added.
     self.assertEqual(
@@ -904,7 +905,8 @@ class AddDescriptorTest(unittest.TestCase):
     self.assertEqual(
         'google/protobuf/unittest.proto',
         pool.FindFileContainingSymbol(
-            prefix + 'protobuf_unittest.TestAllTypes.NestedMessage').name)
+            f'{prefix}protobuf_unittest.TestAllTypes.NestedMessage').name,
+    )
 
   @unittest.skipIf(api_implementation.Type() == 'cpp',
                    'With the cpp implementation, Add() must be called first')
@@ -921,12 +923,12 @@ class AddDescriptorTest(unittest.TestCase):
     self.assertEqual(
         'protobuf_unittest.ForeignEnum',
         pool.FindEnumTypeByName(
-            prefix + 'protobuf_unittest.ForeignEnum').full_name)
+            f'{prefix}protobuf_unittest.ForeignEnum').full_name,
+    )
 
     # AddEnumDescriptor is not recursive.
     with self.assertRaises(KeyError):
-      pool.FindEnumTypeByName(
-          prefix + 'protobuf_unittest.ForeignEnum.NestedEnum')
+      pool.FindEnumTypeByName(f'{prefix}protobuf_unittest.ForeignEnum.NestedEnum')
 
     if api_implementation.Type() == 'cpp':
       pool.AddEnumDescriptor(unittest_pb2.TestAllTypes.NestedEnum.DESCRIPTOR)
@@ -935,7 +937,8 @@ class AddDescriptorTest(unittest.TestCase):
     self.assertEqual(
         'protobuf_unittest.TestAllTypes.NestedEnum',
         pool.FindEnumTypeByName(
-            prefix + 'protobuf_unittest.TestAllTypes.NestedEnum').full_name)
+            f'{prefix}protobuf_unittest.TestAllTypes.NestedEnum').full_name,
+    )
 
     # Files are implicitly also indexed when enums are added.
     self.assertEqual(
@@ -946,7 +949,8 @@ class AddDescriptorTest(unittest.TestCase):
     self.assertEqual(
         'google/protobuf/unittest.proto',
         pool.FindFileContainingSymbol(
-            prefix + 'protobuf_unittest.TestAllTypes.NestedEnum').name)
+            f'{prefix}protobuf_unittest.TestAllTypes.NestedEnum').name,
+    )
 
   @unittest.skipIf(api_implementation.Type() == 'cpp',
                    'With the cpp implementation, Add() must be called first')

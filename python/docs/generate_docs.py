@@ -138,7 +138,7 @@ def find_modules():
       module_name = module_path.stem
     else:
       package_name = package_path.as_posix().replace("/", ".")
-      module_name = package_name + "." + module_path.stem
+      module_name = f"{package_name}.{module_path.stem}"
 
     # Filter: first, accept anything in the whitelist; then, reject anything
     # at package level, then module name level.
@@ -183,7 +183,7 @@ def replace_toc(modules):
 def main():
   modules = list(sorted(find_modules()))
   for module in modules:
-    print("Generating reference for {}".format(module))
+    print(f"Generating reference for {module}")
     write_automodule(module)
   print("Generating index.rst")
   replace_toc(modules)

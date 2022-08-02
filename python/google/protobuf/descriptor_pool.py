@@ -419,7 +419,7 @@ class DescriptorPool(object):
       else:
         raise error
     if not file_proto:
-      raise KeyError('Cannot find a file named %s' % file_name)
+      raise KeyError(f'Cannot find a file named {file_name}')
     return self._ConvertFileProtoToFileDescriptor(file_proto)
 
   def FindFileContainingSymbol(self, symbol):
@@ -447,7 +447,7 @@ class DescriptorPool(object):
       self._FindFileContainingSymbolInDb(symbol)
       return self._InternalFindFileContainingSymbol(symbol)
     except KeyError:
-      raise KeyError('Cannot find a file containing %s' % symbol)
+      raise KeyError(f'Cannot find a file containing {symbol}')
 
   def _InternalFindFileContainingSymbol(self, symbol):
     """Gets the already built FileDescriptor containing the specified symbol.
@@ -496,7 +496,7 @@ class DescriptorPool(object):
               sub_name in message.enum_values_by_name)
       return message.file
     except (KeyError, AssertionError):
-      raise KeyError('Cannot find a file containing %s' % symbol)
+      raise KeyError(f'Cannot find a file containing {symbol}')
 
   def FindMessageTypeByName(self, full_name):
     """Loads the named descriptor from the pool.
@@ -727,7 +727,7 @@ class DescriptorPool(object):
       else:
         raise error
     if not file_proto:
-      raise KeyError('Cannot find a file containing %s' % symbol)
+      raise KeyError(f'Cannot find a file containing {symbol}')
     return self._ConvertFileProtoToFileDescriptor(file_proto)
 
   def _ConvertFileProtoToFileDescriptor(self, file_proto):

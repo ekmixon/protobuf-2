@@ -844,13 +844,13 @@ class TextFormatParserTests(TextFormatBase):
 
     SLASH = '\\'
     self.assertEqual('\x0fb', message.repeated_string[0])
-    self.assertEqual(SLASH + 'xf' + SLASH + 'x62', message.repeated_string[1])
+    self.assertEqual(f'{SLASH}xf{SLASH}x62', message.repeated_string[1])
     self.assertEqual(SLASH + '\x0f' + SLASH + 'b', message.repeated_string[2])
     self.assertEqual(SLASH + SLASH + 'xf' + SLASH + SLASH + 'x62',
                      message.repeated_string[3])
     self.assertEqual(SLASH + SLASH + '\x0f' + SLASH + SLASH + 'b',
                      message.repeated_string[4])
-    self.assertEqual(SLASH + 'x20', message.repeated_string[5])
+    self.assertEqual(f'{SLASH}x20', message.repeated_string[5])
 
   def testParseOneof(self, message_module):
     m = message_module.TestAllTypes()
@@ -993,7 +993,7 @@ class TextFormatMergeTests(TextFormatBase):
 
   def testReplaceMessageInMessage(self, message_module):
     message = message_module.TestAllTypes(
-        optional_int32=42, optional_nested_message=dict())
+        optional_int32=42, optional_nested_message={})
     self.assertTrue(message.HasField('optional_nested_message'))
     text = 'optional_nested_message{ bb: 3 }'
     r = text_format.Merge(text, message)
@@ -1272,7 +1272,7 @@ class OnlyWorksWithProto2RightNowTests(TextFormatBase):
     message = map_unittest_pb2.TestMap()
     for letter in string.ascii_uppercase[13:26]:
       message.map_string_string[letter] = 'dummy'
-    for letter in reversed(string.ascii_uppercase[0:13]):
+    for letter in reversed(string.ascii_uppercase[:13]):
       message.map_string_string[letter] = 'dummy'
     golden = ''.join(('map_string_string {\n  key: "%c"\n  value: "dummy"\n}\n'
                       % (letter,) for letter in string.ascii_uppercase))
@@ -2252,7 +2252,7 @@ class PrettyPrinterTest(TextFormatBase):
     def printer(m, indent, as_one_line):
       del indent, as_one_line
       if m.DESCRIPTOR == message_module.TestAllTypes.NestedMessage.DESCRIPTOR:
-        return 'My lucky number is %s' % m.bb
+        return f'My lucky number is {m.bb}'
 
     message = message_module.TestAllTypes()
     msg = message.repeated_nested_message.add()
@@ -2267,7 +2267,7 @@ class PrettyPrinterTest(TextFormatBase):
     def printer(m, indent, as_one_line):
       if m.DESCRIPTOR == message_module.TestAllTypes.NestedMessage.DESCRIPTOR:
         line_deliminator = (' ' if as_one_line else '\n') + ' ' * indent
-        return 'My lucky number is:%s%s' % (line_deliminator, m.bb)
+        return f'My lucky number is:{line_deliminator}{m.bb}'
       return None
 
     message = message_module.TestAllTypes()
@@ -2305,7 +2305,7 @@ class PrettyPrinterTest(TextFormatBase):
     def printer(m, indent, as_one_line):
       del indent, as_one_line
       if m.DESCRIPTOR == message_module.TestAllTypes.NestedMessage.DESCRIPTOR:
-        return 'My lucky number is %s' % m.bb
+        return f'My lucky number is {m.bb}'
       return None
 
     message = message_module.TestAllTypes()

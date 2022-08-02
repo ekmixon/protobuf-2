@@ -171,7 +171,7 @@ def _CleanRepr(obj):
 # Helper function formerly from the unittest module, removed from it in
 # Python 2.7.
 def _StrClass(cls):
-  return '%s.%s' % (cls.__module__, cls.__name__)
+  return f'{cls.__module__}.{cls.__name__}'
 
 
 def _NonStringIterable(obj):
@@ -181,7 +181,7 @@ def _NonStringIterable(obj):
 
 def _FormatParameterList(testcase_params):
   if isinstance(testcase_params, collections_abc.Mapping):
-    return ', '.join('%s=%s' % (argname, _CleanRepr(value))
+    return ', '.join(f'{argname}={_CleanRepr(value)}'
                      for argname, value in testcase_params.items())
   elif _NonStringIterable(testcase_params):
     return ', '.join(map(_CleanRepr, testcase_params))
@@ -241,16 +241,16 @@ class _ParameterizedTestIter(object):
         # method of TestGeneratorMetaclass.
         # The metaclass will make sure to create a unique, but nondescriptive
         # name for this test.
-        BoundParamTest.__x_extra_id__ = '(%s)' % (
-            _FormatParameterList(testcase_params),)
+        BoundParamTest.__x_extra_id__ = f'({_FormatParameterList(testcase_params)})'
       else:
-        raise RuntimeError('%s is not a valid naming type.' % (naming_type,))
+        raise RuntimeError(f'{naming_type} is not a valid naming type.')
 
-      BoundParamTest.__doc__ = '%s(%s)' % (
-          BoundParamTest.__name__, _FormatParameterList(testcase_params))
+      BoundParamTest.__doc__ = (
+          f'{BoundParamTest.__name__}({_FormatParameterList(testcase_params)})')
       if test_method.__doc__:
         BoundParamTest.__doc__ += '\n%s' % (test_method.__doc__,)
       return BoundParamTest
+
     return (MakeBoundParamTest(c) for c in self.testcases)
 
 
@@ -292,9 +292,10 @@ def _ParameterDecorator(naming_type, testcases):
     if isinstance(obj, type):
       _ModifyClass(
           obj,
-          list(testcases) if not isinstance(testcases, collections_abc.Sequence)
-          else testcases,
-          naming_type)
+          testcases if isinstance(testcases, collections_abc.Sequence) else
+          list(testcases),
+          naming_type,
+      )
       return obj
     else:
       return _ParameterizedTestIter(obj, testcases, naming_type)
@@ -352,7 +353,7 @@ class TestGeneratorMetaclass(type):
   parameters decorator.
   """
 
-  def __new__(mcs, class_name, bases, dct):
+  def __new__(cls, class_name, bases, dct):
     dct['_id_suffix'] = id_suffix = {}
     for name, obj in dct.copy().items():
       if (name.startswith(unittest.TestLoader.testMethodPrefix) and
@@ -361,7 +362,7 @@ class TestGeneratorMetaclass(type):
         dct.pop(name)
         _UpdateClassDictForParamTestCase(dct, id_suffix, name, iterator)
 
-    return type.__new__(mcs, class_name, bases, dct)
+    return type.__new__(cls, class_name, bases, dct)
 
 
 def _UpdateClassDictForParamTestCase(dct, id_suffix, name, iterator):
@@ -393,7 +394,7 @@ class TestCase(unittest.TestCase, metaclass=TestGeneratorMetaclass):
     return self._testMethodName.split(_SEPARATOR)[0]
 
   def __str__(self):
-    return '%s (%s)' % (self._OriginalName(), _StrClass(self.__class__))
+    return f'{self._OriginalName()} ({_StrClass(self.__class__)})'
 
   def id(self):  # pylint: disable=invalid-name
     """Returns the descriptive ID of the test.
@@ -404,9 +405,7 @@ class TestCase(unittest.TestCase, metaclass=TestGeneratorMetaclass):
     Returns:
       The test id.
     """
-    return '%s.%s%s' % (_StrClass(self.__class__),
-                        self._OriginalName(),
-                        self._id_suffix.get(self._testMethodName, ''))
+    return f"{_StrClass(self.__class__)}.{self._OriginalName()}{self._id_suffix.get(self._testMethodName, '')}"
 
 
 def CoopTestCase(other_base_class):

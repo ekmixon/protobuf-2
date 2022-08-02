@@ -933,7 +933,7 @@ class AnyTest(unittest.TestCase):
     # Packs to Any.
     msg.value.Pack(all_types)
     self.assertEqual(msg.value.type_url,
-                     'type.googleapis.com/%s' % all_descriptor.full_name)
+                     f'type.googleapis.com/{all_descriptor.full_name}')
     self.assertEqual(msg.value.value,
                      all_types.SerializeToString())
     # Tests Is() method.
@@ -951,8 +951,8 @@ class AnyTest(unittest.TestCase):
     except AttributeError:
       pass
     else:
-      raise AttributeError('%s should not have Pack method.' %
-                           msg_descriptor.full_name)
+      raise AttributeError(
+          f'{msg_descriptor.full_name} should not have Pack method.')
 
   def testUnpackWithNoSlashInTypeUrl(self):
     msg = any_test_pb2.TestAny()
@@ -980,15 +980,14 @@ class AnyTest(unittest.TestCase):
     # Pack with a custom type URL prefix.
     msg.Pack(submessage, 'type.myservice.com')
     self.assertEqual(msg.type_url,
-                     'type.myservice.com/%s' % submessage.DESCRIPTOR.full_name)
+                     f'type.myservice.com/{submessage.DESCRIPTOR.full_name}')
     # Pack with a custom type URL prefix ending with '/'.
     msg.Pack(submessage, 'type.myservice.com/')
     self.assertEqual(msg.type_url,
-                     'type.myservice.com/%s' % submessage.DESCRIPTOR.full_name)
+                     f'type.myservice.com/{submessage.DESCRIPTOR.full_name}')
     # Pack with an empty type URL prefix.
     msg.Pack(submessage, '')
-    self.assertEqual(msg.type_url,
-                     '/%s' % submessage.DESCRIPTOR.full_name)
+    self.assertEqual(msg.type_url, f'/{submessage.DESCRIPTOR.full_name}')
     # Test unpacking the type.
     unpacked_message = any_test_pb2.TestAny()
     self.assertTrue(msg.Unpack(unpacked_message))

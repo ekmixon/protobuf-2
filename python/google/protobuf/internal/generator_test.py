@@ -155,11 +155,12 @@ class GeneratorTest(unittest.TestCase):
   def testNestedTypes(self):
     self.assertEqual(
         set(unittest_pb2.TestAllTypes.DESCRIPTOR.nested_types),
-        set([
+        {
             unittest_pb2.TestAllTypes.NestedMessage.DESCRIPTOR,
             unittest_pb2.TestAllTypes.OptionalGroup.DESCRIPTOR,
             unittest_pb2.TestAllTypes.RepeatedGroup.DESCRIPTOR,
-        ]))
+        },
+    )
     self.assertEqual(unittest_pb2.TestEmptyMessage.DESCRIPTOR.nested_types, [])
     self.assertEqual(
         unittest_pb2.TestAllTypes.NestedMessage.DESCRIPTOR.nested_types, [])
@@ -290,11 +291,13 @@ class GeneratorTest(unittest.TestCase):
     self.assertEqual(0, desc.oneofs[0].index)
     self.assertIs(desc, desc.oneofs[0].containing_type)
     self.assertIs(desc.oneofs[0], desc.oneofs_by_name['oneof_field'])
-    nested_names = set(['oneof_uint32', 'oneof_nested_message',
-                        'oneof_string', 'oneof_bytes'])
-    self.assertEqual(
-        nested_names,
-        set([field.name for field in desc.oneofs[0].fields]))
+    nested_names = {
+        'oneof_uint32',
+        'oneof_nested_message',
+        'oneof_string',
+        'oneof_bytes',
+    }
+    self.assertEqual(nested_names, {field.name for field in desc.oneofs[0].fields})
     for field_name, field_desc in desc.fields_by_name.items():
       if field_name in nested_names:
         self.assertIs(desc.oneofs[0], field_desc.containing_oneof)

@@ -30,7 +30,7 @@ def readtests(basedir):
   #
   # Seq	Host	Starttime	Runtime	Send	Receive	Exitval	Signal	Command
   # 1	:	1456263838.313	0.005	0	0	0	0	echo A
-  with open(basedir + "/joblog") as jobs:
+  with open(f"{basedir}/joblog") as jobs:
     firstline = next(jobs)
     for line in jobs:
       values = line.split("\t")
@@ -41,26 +41,21 @@ def readtests(basedir):
       test["time"] = values[3]
 
       exitval = values[6]
-      if int(exitval):
-        # We don't have a more specific message.  User should look at stderr.
-        test["failure"] = "TEST FAILURE"
-      else:
-        test["failure"] = False
-
-  for testname in os.listdir(basedir + "/logs/1"):
+      test["failure"] = "TEST FAILURE" if int(exitval) else False
+  for testname in os.listdir(f"{basedir}/logs/1"):
     test = tests[testname]
 
-    with open(basedir + "/logs/1/" + testname + "/stdout") as f:
+    with open(f"{basedir}/logs/1/{testname}/stdout") as f:
       test["stdout"] = f.read()
 
-    with open(basedir + "/logs/1/" + testname + "/stderr") as f:
+    with open(f"{basedir}/logs/1/{testname}/stderr") as f:
       test["stderr"] = f.read()
 
   # The cpp test is special since it doesn't run under parallel so doesn't show
   # up in the job log.
   tests["cpp"]["name"] = "cpp"
 
-  with open(basedir + '/logs/1/cpp/build_time', 'r') as f:
+  with open(f'{basedir}/logs/1/cpp/build_time', 'r') as f:
     tests["cpp"]["time"] = f.read().strip()
   tests["cpp"]["failure"] = False
 

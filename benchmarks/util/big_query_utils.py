@@ -38,11 +38,10 @@ def create_dataset(biq_query, project_id, dataset_id):
         dataset_req.execute(num_retries=NUM_RETRIES)
     except HttpError as http_error:
         if http_error.resp.status == 409:
-            print('Warning: The dataset %s already exists' % dataset_id)
+            print(f'Warning: The dataset {dataset_id} already exists')
         else:
             # Note: For more debugging info, print "http_error.content"
-            print('Error in creating dataset: %s. Err: %s' % (dataset_id,
-                                                              http_error))
+            print(f'Error in creating dataset: {dataset_id}. Err: {http_error}')
             is_success = False
     return is_success
 
@@ -113,10 +112,9 @@ def create_table2(big_query,
         print('Successfully created %s "%s"' % (res['kind'], res['id']))
     except HttpError as http_error:
         if http_error.resp.status == 409:
-            print('Warning: Table %s already exists' % table_id)
+            print(f'Warning: Table {table_id} already exists')
         else:
-            print('Error in creating table: %s. Err: %s' % (table_id,
-                                                            http_error))
+            print(f'Error in creating table: {table_id}. Err: {http_error}')
             is_success = False
     return is_success
 
@@ -144,7 +142,7 @@ def patch_table(big_query, project_id, dataset_id, table_id, fields_schema):
         res = table_req.execute(num_retries=NUM_RETRIES)
         print('Successfully patched %s "%s"' % (res['kind'], res['id']))
     except HttpError as http_error:
-        print('Error in creating table: %s. Err: %s' % (table_id, http_error))
+        print(f'Error in creating table: {table_id}. Err: {http_error}')
         is_success = False
     return is_success
 
@@ -160,10 +158,10 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
             body=body)
         res = insert_req.execute(num_retries=NUM_RETRIES)
         if res.get('insertErrors', None):
-            print('Error inserting rows! Response: %s' % res)
+            print(f'Error inserting rows! Response: {res}')
             is_success = False
     except HttpError as http_error:
-        print('Error inserting rows to the table %s' % table_id)
+        print(f'Error inserting rows to the table {table_id}')
         is_success = False
 
     return is_success
@@ -177,7 +175,7 @@ def sync_query_job(big_query, project_id, query, timeout=5000):
             projectId=project_id,
             body=query_data).execute(num_retries=NUM_RETRIES)
     except HttpError as http_error:
-        print('Query execute job failed with error: %s' % http_error)
+        print(f'Query execute job failed with error: {http_error}')
         print(http_error.content)
     return query_job
 

@@ -48,15 +48,14 @@ def get_metadata():
 
 def upload_result(result_list, metadata):
   for result in result_list:
-    new_result = {}
-    new_result["metric"] = "throughput"
-    new_result["value"] = result["throughput"]
-    new_result["unit"] = "MB/s"
-    new_result["test"] = "protobuf_benchmark"
-    new_result["product_name"] = "protobuf"
-    labels_string = ""
-    for key in result:
-      labels_string += ",|%s:%s|" % (key, result[key])
+    new_result = {
+        "metric": "throughput",
+        "value": result["throughput"],
+        "unit": "MB/s",
+        "test": "protobuf_benchmark",
+        "product_name": "protobuf",
+    }
+    labels_string = "".join(f",|{key}:{result[key]}|" for key in result)
     new_result["labels"] = labels_string[1:]
     new_result["timestamp"] = _INITIAL_TIME
     print(labels_string)
@@ -64,8 +63,7 @@ def upload_result(result_list, metadata):
     bq = big_query_utils.create_big_query()
     row = big_query_utils.make_row(str(uuid.uuid4()), new_result)
     if not big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET,
-                                        _TABLE + "$" + _NOW,
-                                        [row]):
+                                       f"{_TABLE}${_NOW}", [row]):
       print('Error when uploading result', new_result)
 
 

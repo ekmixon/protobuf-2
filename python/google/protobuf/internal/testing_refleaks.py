@@ -107,9 +107,8 @@ if hasattr(sys, 'gettotalrefcount'):
 
   def TestCase(test_class):
     new_bases = (ReferenceLeakCheckerMixin,) + test_class.__bases__
-    new_class = type(test_class)(
-        test_class.__name__, new_bases, dict(test_class.__dict__))
-    return new_class
+    return type(test_class)(test_class.__name__, new_bases,
+                            dict(test_class.__dict__))
   SkipReferenceLeakChecker = unittest.skip
 
 else:

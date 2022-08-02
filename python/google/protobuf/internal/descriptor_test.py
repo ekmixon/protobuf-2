@@ -235,7 +235,7 @@ class DescriptorTest(unittest.TestCase):
     kuint64max = 2**64 - 1
 
     message_descriptor =\
-        unittest_custom_options_pb2.CustomOptionMinIntegerValues.DESCRIPTOR
+          unittest_custom_options_pb2.CustomOptionMinIntegerValues.DESCRIPTOR
     message_options = message_descriptor.GetOptions()
     self.assertEqual(False, message_options.Extensions[
         unittest_custom_options_pb2.bool_opt])
@@ -261,7 +261,7 @@ class DescriptorTest(unittest.TestCase):
         unittest_custom_options_pb2.sfixed64_opt])
 
     message_descriptor =\
-        unittest_custom_options_pb2.CustomOptionMaxIntegerValues.DESCRIPTOR
+          unittest_custom_options_pb2.CustomOptionMaxIntegerValues.DESCRIPTOR
     message_options = message_descriptor.GetOptions()
     self.assertEqual(True, message_options.Extensions[
         unittest_custom_options_pb2.bool_opt])
@@ -287,7 +287,7 @@ class DescriptorTest(unittest.TestCase):
         unittest_custom_options_pb2.sfixed64_opt])
 
     message_descriptor =\
-        unittest_custom_options_pb2.CustomOptionOtherValues.DESCRIPTOR
+          unittest_custom_options_pb2.CustomOptionOtherValues.DESCRIPTOR
     message_options = message_descriptor.GetOptions()
     self.assertEqual(-100, message_options.Extensions[
         unittest_custom_options_pb2.int32_opt])
@@ -305,7 +305,7 @@ class DescriptorTest(unittest.TestCase):
         message_options.Extensions[unittest_custom_options_pb2.enum_opt])
 
     message_descriptor =\
-        unittest_custom_options_pb2.SettingRealsFromPositiveInts.DESCRIPTOR
+          unittest_custom_options_pb2.SettingRealsFromPositiveInts.DESCRIPTOR
     message_options = message_descriptor.GetOptions()
     self.assertAlmostEqual(12, message_options.Extensions[
         unittest_custom_options_pb2.float_opt], 6)
@@ -313,7 +313,7 @@ class DescriptorTest(unittest.TestCase):
         unittest_custom_options_pb2.double_opt])
 
     message_descriptor =\
-        unittest_custom_options_pb2.SettingRealsFromNegativeInts.DESCRIPTOR
+          unittest_custom_options_pb2.SettingRealsFromNegativeInts.DESCRIPTOR
     message_options = message_descriptor.GetOptions()
     self.assertAlmostEqual(-12, message_options.Extensions[
         unittest_custom_options_pb2.float_opt], 6)
@@ -373,12 +373,12 @@ class DescriptorTest(unittest.TestCase):
   def testAggregateOptions(self):
     file_descriptor = unittest_custom_options_pb2.DESCRIPTOR
     message_descriptor =\
-        unittest_custom_options_pb2.AggregateMessage.DESCRIPTOR
+          unittest_custom_options_pb2.AggregateMessage.DESCRIPTOR
     field_descriptor = message_descriptor.fields_by_name["fieldname"]
     enum_descriptor = unittest_custom_options_pb2.AggregateEnum.DESCRIPTOR
     enum_value_descriptor = enum_descriptor.values_by_name["VALUE"]
     service_descriptor =\
-        unittest_custom_options_pb2.AggregateService.DESCRIPTOR
+          unittest_custom_options_pb2.AggregateService.DESCRIPTOR
     method_descriptor = service_descriptor.FindMethodByName("Method")
 
     # Tests for the different types of data embedded in fileopt
@@ -572,7 +572,7 @@ class GeneratedDescriptorTest(unittest.TestCase):
     self.assertEqual(len(sequence), len(expected_list))  # Iterable
     self.assertEqual(sequence[len(sequence) -1], sequence[-1])
     item = sequence[0]
-    self.assertEqual(item, sequence[0])
+    self.assertEqual(item, item)
     self.assertIn(item, sequence)  # Container
     self.assertEqual(sequence.index(item), 0)
     self.assertEqual(sequence.count(item), 1)

@@ -53,7 +53,7 @@ try:
   with open(sys.argv[1], "rb") as f:
     address_book.ParseFromString(f.read())
 except IOError:
-  print(sys.argv[1] + ": File not found.  Creating a new file.")
+  print(f"{sys.argv[1]}: File not found.  Creating a new file.")
 
 # Add an address.
 PromptForAddress(address_book.people.add())

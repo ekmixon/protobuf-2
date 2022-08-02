@@ -123,8 +123,7 @@ class UnexpectedMethodCallError(Error):
     self._expected = expected
 
   def __str__(self):
-    return "Unexpected method call: %s.  Expecting: %s" % \
-      (self._unexpected_method, self._expected)
+    return f"Unexpected method call: {self._unexpected_method}.  Expecting: {self._expected}"
 
 
 class UnknownMethodCallError(Error):
@@ -143,8 +142,7 @@ class UnknownMethodCallError(Error):
     self._unknown_method_name = unknown_method_name
 
   def __str__(self):
-    return "Method called is not a member of the object: %s" % \
-      self._unknown_method_name
+    return f"Method called is not a member of the object: {self._unknown_method_name}"
 
 
 class Mox(object):
@@ -337,14 +335,11 @@ class MockAnything:
     """
 
     # If the list of expected calls is not empty, raise an exception
-    if self._expected_calls_queue:
-      # The last MultipleTimesGroup is not popped from the queue.
-      if (len(self._expected_calls_queue) == 1 and
-          isinstance(self._expected_calls_queue[0], MultipleTimesGroup) and
-          self._expected_calls_queue[0].IsSatisfied()):
-        pass
-      else:
-        raise ExpectedMethodCallsError(self._expected_calls_queue)
+    if self._expected_calls_queue and (
+        len(self._expected_calls_queue) != 1
+        or not isinstance(self._expected_calls_queue[0], MultipleTimesGroup)
+        or not self._expected_calls_queue[0].IsSatisfied()):
+      raise ExpectedMethodCallsError(self._expected_calls_queue)
 
   def _Reset(self):
     """Reset the state of this mock to record mode with an empty queue."""
@@ -616,8 +611,7 @@ class MockMethod(object):
     params = ', '.join(
         [repr(p) for p in self._params or []] +
         ['%s=%r' % x for x in sorted((self._named_params or {}).items())])
-    desc = "%s(%s) -> %r" % (self._name, params, self._return_value)
-    return desc
+    return "%s(%s) -> %r" % (self._name, params, self._return_value)
 
   def __eq__(self, rhs):
     """Test whether this MockMethod is equivalent to another MockMethod.
@@ -1066,14 +1060,10 @@ class And(Comparator):
       bool
     """
 
-    for comparator in self._comparators:
-      if not comparator.equals(rhs):
-        return False
-
-    return True
+    return all(comparator.equals(rhs) for comparator in self._comparators)
 
   def __repr__(self):
-    return '<AND %s>' % str(self._comparators)
+    return f'<AND {str(self._comparators)}>'
 
 
 class Or(Comparator):
@@ -1099,14 +1089,10 @@ class Or(Comparator):
       bool
     """
 
-    for comparator in self._comparators:
-      if comparator.equals(rhs):
-        return True
-
-    return False
+    return any(comparator.equals(rhs) for comparator in self._comparators)
 
   def __repr__(self):
-    return '<OR %s>' % str(self._comparators)
+    return f'<OR {str(self._comparators)}>'
 
 
 class Func(Comparator):
@@ -1309,11 +1295,10 @@ class MultipleTimesGroup(MethodGroup):
         mock_method._call_queue.appendleft(self)
         return self, method
 
-    if self.IsSatisfied():
-      next_method = mock_method._PopNextMethod();
-      return next_method, None
-    else:
+    if not self.IsSatisfied():
       raise UnexpectedMethodCallError(mock_method, self)
+    next_method = mock_method._PopNextMethod();
+    return next_method, None
 
   def IsSatisfied(self):
     """Return True if all methods in this group are called at least once."""
@@ -1341,8 +1326,8 @@ class MoxMetaTestBase(type):
   and any failures will result in test failures as opposed to errors.
   """
 
-  def __init__(cls, name, bases, d):
-    type.__init__(cls, name, bases, d)
+  def __init__(self, name, bases, d):
+    type.__init__(self, name, bases, d)
 
     # also get all the attributes from the base classes to account
     # for a case when test class is not the immediate child of MoxTestBase
@@ -1352,7 +1337,7 @@ class MoxMetaTestBase(type):
 
     for func_name, func in d.items():
       if func_name.startswith('test') and callable(func):
-        setattr(cls, func_name, MoxMetaTestBase.CleanUpTest(cls, func))
+        setattr(self, func_name, MoxMetaTestBase.CleanUpTest(self, func))
 
   @staticmethod
   def CleanUpTest(cls, func):

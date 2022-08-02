@@ -57,14 +57,14 @@ def BuildMessageAndEnumDescriptors(file_des, module):
     for (name, nested_msg) in msg_des.nested_types_by_name.items():
       module_name = prefix + name.upper()
       module[module_name] = nested_msg
-      BuildNestedDescriptors(nested_msg, module_name + '_')
+      BuildNestedDescriptors(nested_msg, f'{module_name}_')
     for enum_des in msg_des.enum_types:
       module[prefix + enum_des.name.upper()] = enum_des
 
   for (name, msg_des) in file_des.message_types_by_name.items():
-    module_name = '_' + name.upper()
+    module_name = f'_{name.upper()}'
     module[module_name] = msg_des
-    BuildNestedDescriptors(msg_des, module_name + '_')
+    BuildNestedDescriptors(msg_des, f'{module_name}_')
 
 
 def BuildTopDescriptorsAndMessages(file_des, module_name, module):
@@ -89,19 +89,19 @@ def BuildTopDescriptorsAndMessages(file_des, module_name, module):
 
   # top level enums
   for (name, enum_des) in file_des.enum_types_by_name.items():
-    module['_' + name.upper()] = enum_des
+    module[f'_{name.upper()}'] = enum_des
     module[name] = enum_type_wrapper.EnumTypeWrapper(enum_des)
     for enum_value in enum_des.values:
       module[enum_value.name] = enum_value.number
 
   # top level extensions
   for (name, extension_des) in file_des.extensions_by_name.items():
-    module[name.upper() + '_FIELD_NUMBER'] = extension_des.number
+    module[f'{name.upper()}_FIELD_NUMBER'] = extension_des.number
     module[name] = extension_des
 
   # services
   for (name, service) in file_des.services_by_name.items():
-    module['_' + name.upper()] = service
+    module[f'_{name.upper()}'] = service
 
   # Build messages.
   for (name, msg_des) in file_des.message_types_by_name.items():
@@ -124,7 +124,7 @@ def BuildServices(file_des, module_name, module):
     module[name] = service_reflection.GeneratedServiceType(
         name, (_service.Service,),
         dict(DESCRIPTOR=service, __module__=module_name))
-    stub_name = name + '_Stub'
+    stub_name = f'{name}_Stub'
     module[stub_name] = service_reflection.GeneratedServiceStubType(
         stub_name, (module[name],),
         dict(DESCRIPTOR=service, __module__=module_name))

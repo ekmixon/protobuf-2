@@ -74,7 +74,7 @@ def GenProto(source, require=True):
   if (not os.path.exists(output) or
       (os.path.exists(source) and
        os.path.getmtime(source) > os.path.getmtime(output))):
-    print('Generating %s...' % output)
+    print(f'Generating {output}...')
 
     if not os.path.exists(source):
       sys.stderr.write("Can't find required file: %s\n" % source)
@@ -209,7 +209,7 @@ class TestConformanceCmd(_build_py):
     # Python 2.6 dodges these extra failures.
     os.environ['CONFORMANCE_PYTHON_EXTRA_FAILURES'] = (
         '--failure_list failure_list_python-post26.txt')
-    cmd = 'cd ../conformance && make %s' % (TestConformanceCmd.target)
+    cmd = f'cd ../conformance && make {TestConformanceCmd.target}'
     subprocess.check_call(cmd, shell=True)
 
 
@@ -247,24 +247,29 @@ if __name__ == '__main__':
       else:
         message_init_symbol = 'PyInit__message'
         api_implementation_init_symbol = 'PyInit__api_implementation'
-      message_extra_link_args = [
-          '-Wl,-exported_symbol,_%s' % message_init_symbol
-      ]
+      message_extra_link_args = [f'-Wl,-exported_symbol,_{message_init_symbol}']
       api_implementation_link_args = [
-          '-Wl,-exported_symbol,_%s' % api_implementation_init_symbol
+          f'-Wl,-exported_symbol,_{api_implementation_init_symbol}'
       ]
-
-    if sys.platform != 'win32':
-      extra_compile_args.append('-Wno-write-strings')
-      extra_compile_args.append('-Wno-invalid-offsetof')
-      extra_compile_args.append('-Wno-sign-compare')
-      extra_compile_args.append('-Wno-unused-variable')
-      extra_compile_args.append('-std=c++11')
 
     if sys.platform == 'darwin':
-      extra_compile_args.append('-Wno-shorten-64-to-32')
-      extra_compile_args.append('-Wno-deprecated-register')
-
+      extra_compile_args.extend((
+          '-Wno-write-strings',
+          '-Wno-invalid-offsetof',
+          '-Wno-sign-compare',
+          '-Wno-unused-variable',
+          '-std=c++11',
+          '-Wno-shorten-64-to-32',
+          '-Wno-deprecated-register',
+      ))
+    elif sys.platform != 'win32':
+      extra_compile_args.extend((
+          '-Wno-write-strings',
+          '-Wno-invalid-offsetof',
+          '-Wno-sign-compare',
+          '-Wno-unused-variable',
+          '-std=c++11',
+      ))
     # https://developer.apple.com/documentation/xcode_release_notes/xcode_10_release_notes
     # C++ projects must now migrate to libc++ and are recommended to set a
     # deployment target of macOS 10.9 or later, or iOS 7 or later.
@@ -277,16 +282,12 @@ if __name__ == '__main__':
             r'macosx-[0-9]+\.[0-9]+-(.+)', r'macosx-10.9-\1',
             util.get_platform())
 
-    # https://github.com/Theano/Theano/issues/4926
     if sys.platform == 'win32':
       extra_compile_args.append('-D_hypot=hypot')
 
-    # https://github.com/tpaviot/pythonocc-core/issues/48
-    if sys.platform == 'win32' and  '64 bit' in sys.version:
-      extra_compile_args.append('-DMS_WIN64')
+      if '64 bit' in sys.version:
+        extra_compile_args.append('-DMS_WIN64')
 
-    # MSVS default is dymanic
-    if sys.platform == 'win32':
       extra_compile_args.append('/MT')
 
     if 'clang' in os.popen('$CC --version 2> /dev/null').read():

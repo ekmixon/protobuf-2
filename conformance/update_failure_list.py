@@ -34,6 +34,7 @@
 This is sort of like comm(1), except it recognizes comments and ignores them.
 """
 
+
 import argparse
 
 parser = argparse.ArgumentParser(
@@ -56,7 +57,7 @@ for remove_file in (args.remove_list or []):
   with open(remove_file) as f:
     for line in f:
       if line in add_set:
-        raise Exception("Asked to both add and remove test: " + line)
+        raise Exception(f"Asked to both add and remove test: {line}")
       remove_set.add(line.strip())
 
 add_list = sorted(add_set, reverse=True)

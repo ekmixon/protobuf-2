@@ -845,12 +845,12 @@ class ReflectionTest(unittest.TestCase):
     # Check that the default value is of python's 'unicode' type.
     self.assertEqual(type(proto.optional_string), str)
 
-    proto.optional_string = str('Testing')
-    self.assertEqual(proto.optional_string, str('Testing'))
+    proto.optional_string = 'Testing'
+    self.assertEqual(proto.optional_string, 'Testing')
 
     # Assign a value of type 'str' which can be encoded in UTF-8.
-    proto.optional_string = str('Testing')
-    self.assertEqual(proto.optional_string, str('Testing'))
+    proto.optional_string = 'Testing'
+    self.assertEqual(proto.optional_string, 'Testing')
 
     # Try to assign a 'bytes' object which contains non-UTF-8.
     self.assertRaises(ValueError,
@@ -1165,7 +1165,7 @@ class Proto2ReflectionTest(unittest.TestCase):
     # clearing the message (which can happen in the more complex C++
     # implementation which has parallel message lists).
     proto = unittest_pb2.TestRequiredForeign()
-    for i in range(10):
+    for _ in range(10):
       proto.repeated_message.add()
     proto2 = unittest_pb2.TestRequiredForeign()
     proto.CopyFrom(proto2)
@@ -1219,7 +1219,7 @@ class Proto2ReflectionTest(unittest.TestCase):
     self.assertEqual([5, 25, 20, 15, 30], proto.repeated_int32[:])
 
     # Test slice assignment with an iterator
-    proto.repeated_int32[1:4] = (i for i in range(3))
+    proto.repeated_int32[1:4] = iter(range(3))
     self.assertEqual([5, 0, 1, 2, 30], proto.repeated_int32)
 
     # Test slice assignment.
@@ -1227,9 +1227,7 @@ class Proto2ReflectionTest(unittest.TestCase):
     self.assertEqual([5, 35, 40, 45, 30], proto.repeated_int32)
 
     # Test that we can use the field as an iterator.
-    result = []
-    for i in proto.repeated_int32:
-      result.append(i)
+    result = list(proto.repeated_int32)
     self.assertEqual([5, 35, 40, 45, 30], result)
 
     # Test single deletion.
@@ -1374,9 +1372,7 @@ class Proto2ReflectionTest(unittest.TestCase):
         [m0], proto.repeated_nested_message[:1])
 
     # Test that we can use the field as an iterator.
-    result = []
-    for i in proto.repeated_nested_message:
-      result.append(i)
+    result = list(proto.repeated_nested_message)
     self.assertListsEqual([m0, m1, m2, m3, m4], result)
 
     # Test single deletion.
@@ -2045,8 +2041,10 @@ class Proto2ReflectionTest(unittest.TestCase):
           another_file_name,
           package_name,
           serialized_pb=file_descriptor_proto.SerializeToString())
-      self.assertTrue(hasattr(cm, 'exception'), '%s not raised' %
-                      getattr(cm.expected, '__name__', cm.expected))
+      self.assertTrue(
+          hasattr(cm, 'exception'),
+          f"{getattr(cm.expected, '__name__', cm.expected)} not raised",
+      )
       self.assertIn('test_file_descriptor_errors.proto', str(cm.exception))
       # Error message will say something about this definition being a
       # duplicate, though we don't check the message exactly to avoid a
@@ -2435,7 +2433,7 @@ class ByteSizeTest(unittest.TestCase):
     self.assertEqual(0, self.Size())
 
     self.assertEqual(2, len(repeated_nested_message))
-    del repeated_nested_message[0:1]
+    del repeated_nested_message[:1]
     # TODO(jieluo): Fix cpp extension bug when delete repeated message.
     if api_implementation.Type() == 'python':
       self.assertEqual(1, len(repeated_nested_message))
@@ -2874,7 +2872,7 @@ class SerializationTest(unittest.TestCase):
       self.assertEqual(exception, str(ex))
       return
     else:
-      raise self.failureException('%s not raised' % str(exc_class))
+      raise self.failureException(f'{str(exc_class)} not raised')
 
   def testSerializeUninitialized(self):
     proto = unittest_pb2.TestRequired()
@@ -3115,8 +3113,6 @@ class SerializationTest(unittest.TestCase):
     except TypeError:
       pass  # The cpp implementation cannot mix fields from other messages.
       # This test exercises a specific check that avoids a crash.
-    else:
-      pass  # The python implementation allows fields from other messages.
       # This is useless, but works.
 
   def testInitKwargs(self):

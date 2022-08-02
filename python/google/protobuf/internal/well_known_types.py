@@ -65,9 +65,9 @@ class Any(object):
            deterministic=None):
     """Packs the specified message into current Any message."""
     if len(type_url_prefix) < 1 or type_url_prefix[-1] != '/':
-      self.type_url = '%s/%s' % (type_url_prefix, msg.DESCRIPTOR.full_name)
+      self.type_url = f'{type_url_prefix}/{msg.DESCRIPTOR.full_name}'
     else:
-      self.type_url = '%s%s' % (type_url_prefix, msg.DESCRIPTOR.full_name)
+      self.type_url = f'{type_url_prefix}{msg.DESCRIPTOR.full_name}'
     self.value = msg.SerializeToString(deterministic=deterministic)
 
   def Unpack(self, msg):
@@ -116,7 +116,7 @@ class Timestamp(object):
     if (nanos % 1e9) == 0:
       # If there are 0 fractional digits, the fractional
       # point '.' should be omitted when serializing.
-      return result + 'Z'
+      return f'{result}Z'
     if (nanos % 1e6) == 0:
       # Serialize 3 fractional digits.
       return result + '.%03dZ' % (nanos / 1e6)
@@ -147,7 +147,7 @@ class Timestamp(object):
     if timezone_offset == -1:
       raise ValueError(
           'Failed to parse timestamp: missing valid timezone offset.')
-    time_value = value[0:timezone_offset]
+    time_value = value[:timezone_offset]
     # Parse datetime and nanos.
     point_position = time_value.find('.')
     if point_position == -1:
@@ -167,10 +167,7 @@ class Timestamp(object):
       raise ValueError(
           'Failed to parse Timestamp: nanos {0} more than '
           '9 fractional digits.'.format(nano_value))
-    if nano_value:
-      nanos = round(float('0.' + nano_value) * 1e9)
-    else:
-      nanos = 0
+    nanos = round(float(f'0.{nano_value}') * 1e9) if nano_value else 0
     # Parse timezone offsets.
     if value[timezone_offset] == 'Z':
       if len(value) != timezone_offset + 1:
@@ -296,7 +293,7 @@ class Duration(object):
     if (nanos % 1e9) == 0:
       # If there are 0 fractional digits, the fractional
       # point '.' should be omitted when serializing.
-      return result + 's'
+      return f'{result}s'
     if (nanos % 1e6) == 0:
       # Serialize 3 fractional digits.
       return result + '.%03ds' % (nanos / 1e6)
@@ -424,10 +421,7 @@ def _RoundTowardZero(value, divider):
   # 1. This function ensures we always return -2 (closer to zero).
   result = value // divider
   remainder = value % divider
-  if result < 0 and remainder > 0:
-    return result + 1
-  else:
-    return result
+  return result + 1 if result < 0 and remainder > 0 else result
 
 
 class FieldMask(object):
@@ -437,9 +431,7 @@ class FieldMask(object):
 
   def ToJsonString(self):
     """Converts FieldMask to string according to proto3 JSON spec."""
-    camelcase_paths = []
-    for path in self.paths:
-      camelcase_paths.append(_SnakeCaseToCamelCase(path))
+    camelcase_paths = [_SnakeCaseToCamelCase(path) for path in self.paths]
     return ','.join(camelcase_paths)
 
   def FromJsonString(self, value):
@@ -453,10 +445,7 @@ class FieldMask(object):
 
   def IsValidForDescriptor(self, message_descriptor):
     """Checks whether the FieldMask is valid for Message Descriptor."""
-    for path in self.paths:
-      if not _IsValidPath(message_descriptor, path):
-        return False
-    return True
+    return all(_IsValidPath(message_descriptor, path) for path in self.paths)
 
   def AllFieldsFromDescriptor(self, message_descriptor):
     """Gets all direct fields of Message Descriptor to FieldMask."""
@@ -546,14 +535,13 @@ def _SnakeCaseToCamelCase(path_name):
           'Fail to print FieldMask to Json string: Path name '
           '{0} must not contain uppercase letters.'.format(path_name))
     if after_underscore:
-      if c.islower():
-        result.append(c.upper())
-        after_underscore = False
-      else:
+      if not c.islower():
         raise ValueError(
             'Fail to print FieldMask to Json string: The '
             'character after a "_" must be a lowercase letter '
             'in path name {0}.'.format(path_name))
+      result.append(c.upper())
+      after_underscore = False
     elif c == '_':
       after_underscore = True
     else:
@@ -658,7 +646,7 @@ class _FieldMaskTree(object):
     if not node:
       self.AddPath(prefix)
     for name in node:
-      child_path = prefix + '.' + name
+      child_path = f'{prefix}.{name}'
       self.AddLeafNodes(child_path, node[name])
 
   def MergeMessage(
@@ -674,9 +662,7 @@ def _StrConvert(value):
   # This file is imported by c extension and some methods like ClearField
   # requires string for the field name. py2/py3 has different text
   # type and may use unicode.
-  if not isinstance(value, str):
-    return value.encode('utf-8')
-  return value
+  return value if isinstance(value, str) else value.encode('utf-8')
 
 
 def _MergeMessage(
@@ -707,14 +693,13 @@ def _MergeMessage(
       repeated_source = getattr(source, name)
       repeated_destination = getattr(destination, name)
       repeated_destination.MergeFrom(repeated_source)
+    elif field.cpp_type == FieldDescriptor.CPPTYPE_MESSAGE:
+      if replace_message:
+        destination.ClearField(_StrConvert(name))
+      if source.HasField(name):
+        getattr(destination, name).MergeFrom(getattr(source, name))
     else:
-      if field.cpp_type == FieldDescriptor.CPPTYPE_MESSAGE:
-        if replace_message:
-          destination.ClearField(_StrConvert(name))
-        if source.HasField(name):
-          getattr(destination, name).MergeFrom(getattr(source, name))
-      else:
-        setattr(destination, name, getattr(source, name))
+      setattr(destination, name, getattr(source, name))
 
 
 def _AddFieldPaths(node, prefix, field_mask):
@@ -723,10 +708,7 @@ def _AddFieldPaths(node, prefix, field_mask):
     field_mask.paths.append(prefix)
     return
   for name in sorted(node):
-    if prefix:
-      child_path = prefix + '.' + name
-    else:
-      child_path = name
+    child_path = f'{prefix}.{name}' if prefix else name
     _AddFieldPaths(node[name], child_path, field_mask)
 
 
